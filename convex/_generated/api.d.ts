@@ -18,6 +18,7 @@ import type * as documentVersions from "../documentVersions.js";
 import type * as documents from "../documents.js";
 import type * as http from "../http.js";
 import type * as myFunctions from "../myFunctions.js";
+import type * as projectDictionaries from "../projectDictionaries.js";
 import type * as projects from "../projects.js";
 
 /**
@@ -34,6 +35,7 @@ declare const fullApi: ApiFromModules<{
   documents: typeof documents;
   http: typeof http;
   myFunctions: typeof myFunctions;
+  projectDictionaries: typeof projectDictionaries;
   projects: typeof projects;
 }>;
 export declare const api: FilterApi<

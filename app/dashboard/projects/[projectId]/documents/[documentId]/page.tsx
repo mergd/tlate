@@ -1,12 +1,16 @@
 "use client";
 
-import { use } from "react";
-import { useQuery } from "convex/react";
+import { use, useState } from "react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { DocumentEditor } from "@/components/editor/DocumentEditor";
+import { EditableTitle } from "@/components/editor/EditableTitle";
+import { DocumentVersionsDialog } from "@/components/editor/DocumentVersionsDialog";
+import { DocumentSettingsDialog } from "@/components/editor/DocumentSettingsDialog";
+import { DictionaryPanel } from "@/components/dictionary/DictionaryPanel";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Settings, History } from "lucide-react";
+import { ArrowLeft, Settings, History, BookOpen } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface DocumentPageProps {
@@ -19,12 +23,18 @@ interface DocumentPageProps {
 export default function DocumentPage({ params }: DocumentPageProps) {
   const resolvedParams = use(params);
   const router = useRouter();
+  const [isVersionsDialogOpen, setIsVersionsDialogOpen] = useState(false);
+  const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
+  const [isDictionaryOpen, setIsDictionaryOpen] = useState(false);
+  
   const document = useQuery(api.documents.get, { 
     id: resolvedParams.documentId as Id<"documents"> 
   });
   const project = useQuery(api.projects.get, { 
     id: resolvedParams.projectId as Id<"projects"> 
   });
+  
+  const updateDocument = useMutation(api.documents.update);
 
   if (document === undefined || project === undefined) {
     return (
@@ -63,11 +73,19 @@ export default function DocumentPage({ params }: DocumentPageProps) {
               size="sm"
               onClick={() => router.push(`/dashboard/projects/${resolvedParams.projectId}`)}
             >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Project
+              <ArrowLeft className="h-3.5 w-3.5 mr-1" />
+              Back
             </Button>
             <div>
-              <h1 className="text-xl font-bold text-foreground">{document.title}</h1>
+              <EditableTitle
+                title={document.title}
+                onSave={(newTitle) => updateDocument({ 
+                  id: document._id, 
+                  title: newTitle 
+                })}
+                className="text-xl font-bold text-foreground"
+                placeholder="Untitled Document"
+              />
               <p className="text-sm text-muted-foreground">
                 {project.name} • {project.sourceLanguage} → {project.targetLanguage}
               </p>
@@ -78,7 +96,15 @@ export default function DocumentPage({ params }: DocumentPageProps) {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => router.push(`/dashboard/projects/${resolvedParams.projectId}/documents/${resolvedParams.documentId}/versions`)}
+              onClick={() => setIsDictionaryOpen(!isDictionaryOpen)}
+            >
+              <BookOpen className="h-4 w-4 mr-2" />
+              Dictionary
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsVersionsDialogOpen(true)}
             >
               <History className="h-4 w-4 mr-2" />
               Versions
@@ -86,7 +112,7 @@ export default function DocumentPage({ params }: DocumentPageProps) {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => router.push(`/dashboard/projects/${resolvedParams.projectId}/documents/${resolvedParams.documentId}/settings`)}
+              onClick={() => setIsSettingsDialogOpen(true)}
             >
               <Settings className="h-4 w-4 mr-2" />
               Settings
@@ -95,17 +121,47 @@ export default function DocumentPage({ params }: DocumentPageProps) {
         </div>
       </div>
 
-      {/* Editor */}
-      <div className="flex-1">
-        <DocumentEditor
-          documentId={resolvedParams.documentId}
-          initialContent={document.currentVersion?.content || ''}
-          initialTranslatedContent={document.currentVersion?.translatedContent || ''}
-          onSave={(content, translatedContent) => {
-            console.log('Document saved:', { content, translatedContent });
-          }}
-        />
+      {/* Main Content Area */}
+      <div className="flex-1 flex">
+        {/* Dictionary Panel */}
+        {isDictionaryOpen && (
+          <div className="w-80 border-r border-border overflow-y-auto">
+            <DictionaryPanel 
+              projectId={resolvedParams.projectId}
+              className="m-4"
+            />
+          </div>
+        )}
+        
+        {/* Editor */}
+        <div className="flex-1">
+          <DocumentEditor
+            documentId={resolvedParams.documentId}
+            initialContent={document.currentVersion?.content || ''}
+            initialTranslatedContent={document.currentVersion?.translatedContent || ''}
+            onSave={(content, translatedContent) => {
+              console.log('Document saved:', { content, translatedContent });
+            }}
+          />
+        </div>
       </div>
+
+      {/* Dialogs */}
+      <DocumentVersionsDialog
+        open={isVersionsDialogOpen}
+        onOpenChange={setIsVersionsDialogOpen}
+        documentId={resolvedParams.documentId}
+        onSelectVersion={(versionId) => {
+          // TODO: Implement version restoration
+          console.log('Restore version:', versionId);
+        }}
+      />
+
+      <DocumentSettingsDialog
+        open={isSettingsDialogOpen}
+        onOpenChange={setIsSettingsDialogOpen}
+        documentId={resolvedParams.documentId}
+      />
     </div>
   );
 }

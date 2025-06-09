@@ -26,9 +26,10 @@ interface Project {
 
 interface ProjectListProps {
   projects: Project[];
+  isCollapsed?: boolean;
 }
 
-export function ProjectList({ projects }: ProjectListProps) {
+export function ProjectList({ projects, isCollapsed = false }: ProjectListProps) {
   const router = useRouter();
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
 
@@ -43,11 +44,17 @@ export function ProjectList({ projects }: ProjectListProps) {
   };
 
   if (!projects.length) {
+    if (isCollapsed) {
+      return (
+        <div className="text-center text-muted-foreground py-4">
+          <FolderOpen className="h-4 w-4 mx-auto opacity-50" />
+        </div>
+      );
+    }
     return (
-      <div className="p-4 text-center text-muted-foreground">
-        <FolderOpen className="h-8 w-8 mx-auto mb-2 opacity-50" />
-        <p className="text-sm">No projects yet</p>
-        <p className="text-xs">Create your first project to get started</p>
+      <div className="text-center text-muted-foreground py-4">
+        <FolderOpen className="h-6 w-6 mx-auto mb-2 opacity-50" />
+        <p className="text-xs">No projects yet</p>
       </div>
     );
   }
@@ -58,9 +65,10 @@ export function ProjectList({ projects }: ProjectListProps) {
         <ProjectItem
           key={project._id}
           project={project}
-          isExpanded={expandedProjects.has(project._id)}
+          isExpanded={expandedProjects.has(project._id) && !isCollapsed}
           onToggle={() => toggleProject(project._id)}
           onNavigate={(path) => router.push(path)}
+          isCollapsed={isCollapsed}
         />
       ))}
     </div>
@@ -72,44 +80,51 @@ interface ProjectItemProps {
   isExpanded: boolean;
   onToggle: () => void;
   onNavigate: (path: string) => void;
+  isCollapsed?: boolean;
 }
 
-function ProjectItem({ project, isExpanded, onToggle, onNavigate }: ProjectItemProps) {
+function ProjectItem({ project, isExpanded, onToggle, onNavigate, isCollapsed = false }: ProjectItemProps) {
   const documents = useQuery(api.documents.listByProject, { projectId: project._id as Id<"projects"> });
 
   return (
     <div className="group">
       <div
-        className="flex items-center justify-between p-2 rounded-md hover:bg-accent cursor-pointer"
-        onClick={onToggle}
+        className={`flex items-center justify-between p-2 rounded-md hover:bg-accent cursor-pointer ${
+          isCollapsed ? 'justify-center' : ''
+        }`}
+        onClick={isCollapsed ? () => onNavigate(`/dashboard/projects/${project._id}`) : onToggle}
       >
-        <div className="flex items-center space-x-2 flex-1 min-w-0">
-          <FolderOpen className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-foreground truncate">
-              {project.name}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {project.sourceLanguage} → {project.targetLanguage}
-            </p>
-          </div>
+        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'space-x-2 flex-1 min-w-0'}`}>
+          <FolderOpen className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+          {!isCollapsed && (
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-foreground truncate">
+                {project.name}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {project.sourceLanguage} → {project.targetLanguage}
+              </p>
+            </div>
+          )}
         </div>
         
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-            <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100">
-              <MoreHorizontal className="h-3 w-3" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onNavigate(`/dashboard/projects/${project._id}`)}>
-              Open Project
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onNavigate(`/dashboard/projects/${project._id}/settings`)}>
-              Settings
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {!isCollapsed && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+              <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100">
+                <MoreHorizontal className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => onNavigate(`/dashboard/projects/${project._id}`)}>
+                Open Project
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onNavigate(`/dashboard/projects/${project._id}/settings`)}>
+                Settings
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
 
       {isExpanded && (

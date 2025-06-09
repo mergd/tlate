@@ -54,6 +54,28 @@ export const create = mutation({
   },
 });
 
+export const list = query({
+  args: { documentId: v.id("documents") },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      return [];
+    }
+
+    // Verify document ownership
+    const document = await ctx.db.get(args.documentId);
+    if (!document || document.ownerId !== userId) {
+      return [];
+    }
+
+    return await ctx.db
+      .query("documentVersions")
+      .withIndex("by_document", (q) => q.eq("documentId", args.documentId))
+      .order("desc")
+      .collect();
+  },
+});
+
 export const listByDocument = query({
   args: { documentId: v.id("documents") },
   handler: async (ctx, args) => {

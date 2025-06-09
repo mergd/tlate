@@ -1,111 +1,196 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { Tabs as BaseTabs } from "@base-ui-components/react/tabs"
+import * as React from "react";
+import * as TabsPrimitive from "@radix-ui/react-tabs";
+import { SpinnerGapIcon } from "@phosphor-icons/react/dist/ssr";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
-type TabsVariant = "capsule" | "underline"
-
-type TabsContext = {
-	variant: TabsVariant
+interface TabItem {
+  value: string;
+  label: string | React.ReactNode;
+  icon?: React.ReactNode;
+  badge?: {
+    count?: number;
+    variant?:
+      | "default"
+      | "secondary"
+      | "outline"
+      | "success"
+      | "warning"
+      | "info"
+      | "danger";
+    loading?: boolean;
+  };
 }
 
-const TabsContext = React.createContext<TabsContext | null>(null)
-
-const useTabs = () => {
-	const context = React.useContext(TabsContext)
-
-	if (!context) {
-		throw new Error("useTabs must be used within a Tabs")
-	}
-
-	return context
+function Tabs({
+  className,
+  ...props
+}: React.ComponentProps<typeof TabsPrimitive.Root>) {
+  return (
+    <TabsPrimitive.Root
+      data-slot="tabs"
+      className={cn("w-full", className)}
+      {...props}
+    />
+  );
 }
 
-interface TabsProps
-	extends React.ComponentPropsWithoutRef<typeof BaseTabs.Root> {
-	variant?: TabsVariant
+function TabsList({
+  className,
+  items,
+  defaultValue,
+  onValueChange,
+  ...props
+}: React.ComponentProps<typeof TabsPrimitive.List> & {
+  items: TabItem[];
+  defaultValue?: string;
+  onValueChange?: (value: string) => void;
+}) {
+  const [selectedValue, setSelectedValue] = React.useState(
+    defaultValue || items[0]?.value || "",
+  );
+
+  const handleValueChange = (value: string) => {
+    setSelectedValue(value);
+    onValueChange?.(value);
+  };
+
+  const selectedItem = items.find((item) => item.value === selectedValue);
+
+  return (
+    <div className="border-b border-gray-6 w-full px-3">
+      {/* Mobile dropdown */}
+      <div className="sm:hidden">
+        <Select value={selectedValue} onValueChange={handleValueChange}>
+          <SelectTrigger className="w-full">
+            <SelectValue>
+              <div className="flex items-center">
+                {selectedItem?.icon && (
+                  <span className="mr-2">{selectedItem.icon}</span>
+                )}
+                {selectedItem?.label}
+                {selectedItem?.badge && (
+                  <div className="ml-2">
+                    {selectedItem.badge.loading ? (
+                      <SpinnerGapIcon className="size-3 animate-spin text-muted-foreground" />
+                    ) : (
+                      selectedItem.badge.count !== undefined && (
+                        <Badge
+                          variant={selectedItem.badge.variant || "secondary"}
+                          className="text-xs px-1.5 py-0.5 min-w-5 h-5"
+                        >
+                          {selectedItem.badge.count}
+                        </Badge>
+                      )
+                    )}
+                  </div>
+                )}
+              </div>
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {items.map((item) => (
+              <SelectItem key={item.value} value={item.value}>
+                <div className="flex items-center w-full">
+                  {item.icon && <span className="mr-2">{item.icon}</span>}
+                  {item.label}
+                  {item.badge && (
+                    <div className="ml-auto">
+                      {item.badge.loading ? (
+                        <SpinnerGapIcon className="size-3 animate-spin text-muted-foreground" />
+                      ) : (
+                        item.badge.count !== undefined && (
+                          <Badge
+                            variant={item.badge.variant || "secondary"}
+                            className="text-xs px-1.5 py-0.5 min-w-5 h-5"
+                          >
+                            {item.badge.count}
+                          </Badge>
+                        )
+                      )}
+                    </div>
+                  )}
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Desktop tabs */}
+      <TabsPrimitive.List
+        data-slot="tabs-list"
+        className={cn("hidden sm:flex space-x-8 -mb-px", className)}
+        {...props}
+      >
+        {items.map((item) => (
+          <TabsTrigger key={item.value} value={item.value}>
+            {item.icon && <span className="mr-2">{item.icon}</span>}
+            {item.label}
+            {item.badge && (
+              <div className="ml-2">
+                {item.badge.loading ? (
+                  <SpinnerGapIcon className="size-3 animate-spin text-muted-foreground" />
+                ) : (
+                  item.badge.count !== undefined && (
+                    <Badge
+                      variant={item.badge.variant || "secondary"}
+                      className="text-xs px-1.5 py-0.5 min-w-5 h-5"
+                    >
+                      {item.badge.count}
+                    </Badge>
+                  )
+                )}
+              </div>
+            )}
+          </TabsTrigger>
+        ))}
+      </TabsPrimitive.List>
+    </div>
+  );
 }
 
-const Tabs = React.forwardRef<HTMLDivElement, TabsProps>(
-	({ variant = "capsule", ...props }, ref) => (
-		<TabsContext.Provider value={{ variant }}>
-			<BaseTabs.Root ref={ref} {...props} />
-		</TabsContext.Provider>
-	)
-)
-Tabs.displayName = "Tabs"
+function TabsTrigger({
+  className,
+  ...props
+}: React.ComponentProps<typeof TabsPrimitive.Trigger>) {
+  return (
+    <TabsPrimitive.Trigger
+      data-slot="tabs-trigger"
+      className={cn(
+        "border-b-2 px-0.5 py-2 text-sm font-medium whitespace-nowrap transition-colors flex items-center",
+        "data-[state=inactive]:border-transparent data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:border-gray-8 data-[state=inactive]:hover:text-muted-foreground/80",
+        "data-[state=active]:border-primary data-[state=active]:text-foreground",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        "disabled:pointer-events-none disabled:opacity-50",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
 
-const TabsList = React.forwardRef<
-	HTMLDivElement,
-	React.ComponentPropsWithoutRef<typeof BaseTabs.List>
->(({ className, children, ...props }, ref) => {
-	const { variant } = useTabs()
+function TabsContent({
+  className,
+  ...props
+}: React.ComponentProps<typeof TabsPrimitive.Content>) {
+  return (
+    <TabsPrimitive.Content
+      data-slot="tabs-content"
+      className={cn("mt-4", className)}
+      {...props}
+    />
+  );
+}
 
-	return (
-		<BaseTabs.List
-			ref={ref}
-			className={cn(
-				"relative flex gap-1 text-sm font-medium",
-				variant === "capsule" ? "rounded-md border px-1" : "border-b",
-				className
-			)}
-			{...props}
-		>
-			{children}
-			<TabIndicator />
-		</BaseTabs.List>
-	)
-})
-TabsList.displayName = "TabsList"
-
-const Tab = React.forwardRef<
-	HTMLButtonElement,
-	React.ComponentPropsWithoutRef<typeof BaseTabs.Tab>
->(({ className, ...props }, ref) => (
-	<BaseTabs.Tab
-		ref={ref}
-		className={cn(
-			"z-[1] min-h-10 w-full text-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
-			className
-		)}
-		{...props}
-	/>
-))
-Tab.displayName = "Tab"
-
-const TabIndicator = React.forwardRef<
-	HTMLDivElement,
-	React.ComponentPropsWithoutRef<typeof BaseTabs.Indicator>
->(({ className, ...props }, ref) => {
-	const { variant } = useTabs()
-	return (
-		<BaseTabs.Indicator
-			ref={ref}
-			className={cn(
-				"absolute left-0 w-[var(--active-tab-width)] -translate-y-1/2 translate-x-[var(--active-tab-left)] transition-all duration-200 ease-in-out",
-				variant === "underline"
-					? "top-full z-10 h-px bg-primary"
-					: "top-1/2 h-[calc(var(--active-tab-height)-0.5rem)] rounded-md bg-muted",
-				className
-			)}
-			{...props}
-		/>
-	)
-})
-TabIndicator.displayName = "TabIndicator"
-
-const TabContent = React.forwardRef<
-	HTMLDivElement,
-	React.ComponentPropsWithoutRef<typeof BaseTabs.Panel>
->(({ className, ...props }, ref) => (
-	<BaseTabs.Panel
-		ref={ref}
-		className={cn("mt-2 flex-1 rounded-md border p-4", className)}
-		{...props}
-	/>
-))
-TabContent.displayName = "TabContent"
-
-export { Tabs, TabsList, Tab, TabContent }
+export { Tabs, TabsList, TabsTrigger, TabsContent, type TabItem };

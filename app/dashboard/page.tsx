@@ -27,11 +27,11 @@ export default function DashboardPage() {
 
   return (
     <div className="h-full overflow-auto">
-      <div className="max-w-7xl mx-auto p-6 space-y-8">
+      <div className="max-w-7xl mx-auto p-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+            <h1 className="text-2xl font-serif font-medium text-foreground">Dashboard</h1>
             <p className="text-muted-foreground mt-1">
               Manage your translation projects and documents
             </p>
@@ -93,7 +93,7 @@ export default function DashboardPage() {
         {/* Recent Projects */}
         <Card>
           <CardHeader>
-            <CardTitle>Recent Projects</CardTitle>
+            <CardTitle className="font-serif">Recent Projects</CardTitle>
             <CardDescription>
               Your most recently updated translation projects
             </CardDescription>

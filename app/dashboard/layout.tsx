@@ -2,7 +2,7 @@
 
 import { Authenticated, Unauthenticated } from "convex/react";
 import { Button } from "@/components/ui/button";
-import { Sidebar } from "@/components/dashboard/Sidebar";
+import { TabbedSidebar } from "@/components/dashboard/TabbedSidebar";
 import { ChatInterface } from "@/components/chat/ChatInterface";
 import { useState } from "react";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
@@ -13,35 +13,58 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
 
   return (
     <>
       <Authenticated>
-        <div className="h-screen bg-background">
+        <div className="h-screen bg-background flex">
           <PanelGroup direction="horizontal">
             {/* Sidebar */}
-            <Panel defaultSize={20} minSize={15} maxSize={30}>
-              <Sidebar onToggleChat={() => setIsChatOpen(!isChatOpen)} />
+            <Panel 
+              defaultSize={isSidebarCollapsed ? 3 : 20} 
+              minSize={isSidebarCollapsed ? 3 : 15} 
+              maxSize={isSidebarCollapsed ? 3 : 40}
+              className="relative z-10"
+              onMouseEnter={() => isSidebarCollapsed && setIsSidebarHovered(true)}
+              onMouseLeave={() => isSidebarCollapsed && setIsSidebarHovered(false)}
+            >
+              <TabbedSidebar 
+                isCollapsed={isSidebarCollapsed}
+                onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                isHovered={isSidebarHovered}
+              />
             </Panel>
             
-            <PanelResizeHandle className="w-2 bg-border hover:bg-accent transition-colors" />
-            
-            {/* Main Content */}
-            <Panel defaultSize={isChatOpen ? 50 : 80}>
-              <div className="h-full overflow-hidden">
-                {children}
-              </div>
-            </Panel>
-            
-            {/* Chat Panel */}
-            {isChatOpen && (
-              <>
-                <PanelResizeHandle className="w-2 bg-border hover:bg-accent transition-colors" />
-                <Panel defaultSize={30} minSize={25} maxSize={40}>
-                  <ChatInterface onClose={() => setIsChatOpen(false)} />
-                </Panel>
-              </>
+            {!isSidebarCollapsed && (
+              <PanelResizeHandle className="w-1 bg-border hover:bg-accent transition-colors" />
             )}
+          
+            {/* Main Content Area */}
+            <Panel defaultSize={isSidebarCollapsed ? 97 : 80} minSize={60}>
+              {!isChatOpen ? (
+                /* Full Width Main Content */
+                <div className="h-full overflow-hidden">
+                  {children}
+                </div>
+              ) : (
+                /* Split View with Chat */
+                <PanelGroup direction="horizontal">
+                  <Panel defaultSize={70} minSize={50}>
+                    <div className="h-full overflow-hidden">
+                      {children}
+                    </div>
+                  </Panel>
+                  
+                  <PanelResizeHandle className="w-2 bg-border hover:bg-accent transition-colors" />
+                  
+                  <Panel defaultSize={30} minSize={25} maxSize={50}>
+                    <ChatInterface onClose={() => setIsChatOpen(false)} />
+                  </Panel>
+                </PanelGroup>
+              )}
+            </Panel>
           </PanelGroup>
         </div>
       </Authenticated>

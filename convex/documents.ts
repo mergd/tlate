@@ -21,7 +21,7 @@ export const create = mutation({
     }
 
     const now = Date.now();
-    
+
     // Create document
     const documentId = await ctx.db.insert("documents", {
       title: args.title,
@@ -113,7 +113,7 @@ export const update = mutation({
       throw new Error("Document not found");
     }
 
-    const updates: any = { updatedAt: Date.now() };
+    const updates: Record<string, unknown> = { updatedAt: Date.now() };
     if (args.title !== undefined) updates.title = args.title;
 
     await ctx.db.patch(args.id, updates);
@@ -138,7 +138,7 @@ export const remove = mutation({
       .query("documentVersions")
       .withIndex("by_document", (q) => q.eq("documentId", args.id))
       .collect();
-    
+
     for (const version of versions) {
       await ctx.db.delete(version._id);
     }
@@ -149,9 +149,9 @@ export const remove = mutation({
 });
 
 export const search = query({
-  args: { 
+  args: {
     query: v.string(),
-    projectId: v.optional(v.id("projects"))
+    projectId: v.optional(v.id("projects")),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -159,7 +159,7 @@ export const search = query({
       return [];
     }
 
-    let searchQuery = ctx.db
+    const searchQuery = ctx.db
       .query("documents")
       .withSearchIndex("search_documents", (q) => {
         let search = q.search("title", args.query);

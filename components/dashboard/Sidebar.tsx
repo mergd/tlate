@@ -9,21 +9,27 @@ import {
   FolderPlus, 
   Search, 
   MessageSquare, 
-  Settings
+  Settings,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { CreateProjectDialog } from "./CreateProjectDialog";
 import { ProjectList } from "./ProjectList";
-import { ThemeSelector } from "@/components/theme/ThemeSelector";
 import { useRouter } from "next/navigation";
 
 interface SidebarProps {
   onToggleChat: () => void;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
+  isHovered?: boolean;
 }
 
-export function Sidebar({ onToggleChat }: SidebarProps) {
+export function Sidebar({ onToggleChat, isCollapsed = false, onToggleCollapse, isHovered = false }: SidebarProps) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false);
+  const showContent = !isCollapsed || isHovered;
+  const shouldShowShadow = isCollapsed && isHovered;
   
   const projects = useQuery(api.projects.list);
   const searchResults = useQuery(
@@ -34,63 +40,88 @@ export function Sidebar({ onToggleChat }: SidebarProps) {
   const displayProjects = searchQuery ? searchResults : projects;
 
   return (
-    <div className="h-full bg-background border-r border-border flex flex-col">
+    <div 
+      className={`h-full bg-background border-r border-border flex flex-col transition-all duration-300 ${
+        shouldShowShadow ? 'shadow-lg' : ''
+      }`}
+    >
       {/* Header */}
-      <div className="p-4 border-b border-border">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-xl font-bold text-foreground">TLate</h1>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onToggleChat}
-            className="h-8 w-8"
-          >
-            <MessageSquare className="h-4 w-4" />
-          </Button>
+      <div className="px-3 py-4 border-b border-border">
+        <div className="flex items-center justify-between mb-3">
+          {showContent && (
+            <h1 className="text-lg font-serif font-medium text-foreground">TLate</h1>
+          )}
+          <div className="flex items-center gap-1">
+            {showContent && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onToggleChat}
+                className="h-7 w-7"
+              >
+                <MessageSquare className="h-3.5 w-3.5" />
+              </Button>
+            )}
+            {onToggleCollapse && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onToggleCollapse}
+                className="h-7 w-7"
+              >
+                {isCollapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
+              </Button>
+            )}
+          </div>
         </div>
         
         {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search projects..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
-        </div>
+        {showContent && (
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              placeholder="Search projects..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 h-8 text-sm"
+            />
+          </div>
+        )}
       </div>
 
       {/* Actions */}
-      <div className="p-4 space-y-2">
+      <div className="px-3 py-3">
         <Button
           onClick={() => setIsCreateProjectOpen(true)}
-          className="w-full justify-start"
+          className={`${showContent ? 'w-full justify-start' : 'w-full justify-center'} h-8`}
           variant="outline"
+          size="sm"
         >
-          <FolderPlus className="h-4 w-4 mr-2" />
-          New Project
+          <FolderPlus className="h-3.5 w-3.5" />
+          {showContent && <span className="ml-2 text-sm">New Project</span>}
         </Button>
       </div>
 
       {/* Projects List */}
-      <div className="flex-1 overflow-auto">
-        <ProjectList projects={displayProjects || []} />
+      <div className="flex-1 overflow-auto px-3">
+        {showContent && (
+          <div className="mb-2">
+            <h2 className="text-xs font-serif font-medium text-muted-foreground uppercase tracking-wider mb-2">Projects</h2>
+          </div>
+        )}
+        <ProjectList projects={displayProjects || []} isCollapsed={isCollapsed && !isHovered} />
       </div>
 
       {/* Footer */}
-      <div className="p-4 border-t border-border space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">Theme</span>
-          <ThemeSelector />
-        </div>
+      <div className="px-3 py-3 border-t border-border">
         <Button
           variant="ghost"
-          className="w-full justify-start"
+          className={`${showContent ? 'w-full justify-start' : 'w-full justify-center'} h-8`}
+          size="sm"
           onClick={() => router.push("/settings")}
         >
-          <Settings className="h-4 w-4 mr-2" />
-          Settings
+          <Settings className="h-3.5 w-3.5" />
+          {showContent && <span className="ml-2 text-sm">Settings</span>}
         </Button>
       </div>
 

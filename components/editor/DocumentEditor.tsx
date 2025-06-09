@@ -1,30 +1,26 @@
 "use client";
 
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import Placeholder from '@tiptap/extension-placeholder';
-import CharacterCount from '@tiptap/extension-character-count';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { 
-  Bold, 
-  Italic, 
-  List, 
-  ListOrdered, 
-  Quote, 
-  Code, 
-  Heading1, 
-  Heading2, 
-  Heading3,
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Underline from "@tiptap/extension-underline";
+import Placeholder from "@tiptap/extension-placeholder";
+import CharacterCount from "@tiptap/extension-character-count";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import {
+  Bold,
+  Italic,
+  Underline as UnderlineIcon,
   Undo,
   Redo,
   Save,
-  Languages
-} from 'lucide-react';
-import { useState, useCallback, useEffect } from 'react';
-import { useMutation } from 'convex/react';
-import { api } from '@/convex/_generated/api';
-import { Id } from '@/convex/_generated/dataModel';
+  Languages,
+  Copy,
+} from "lucide-react";
+import { useState, useCallback, useEffect } from "react";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { Id } from "@/convex/_generated/dataModel";
 
 interface DocumentEditorProps {
   documentId: string;
@@ -34,23 +30,25 @@ interface DocumentEditorProps {
   readonly?: boolean;
 }
 
-export function DocumentEditor({ 
-  documentId, 
-  initialContent = '', 
-  initialTranslatedContent = '',
+export function DocumentEditor({
+  documentId,
+  initialContent = "",
+  initialTranslatedContent = "",
   onSave,
-  readonly = false 
+  readonly = false,
 }: DocumentEditorProps) {
-  const [activeTab, setActiveTab] = useState<'source' | 'translated'>('source');
+  // Removed tabs mode - only using side-by-side view
   const [isSaving, setIsSaving] = useState(false);
-  
+  const [isTranslating, setIsTranslating] = useState(false);
+
   const createVersion = useMutation(api.documentVersions.create);
 
   const sourceEditor = useEditor({
     extensions: [
       StarterKit,
+      Underline,
       Placeholder.configure({
-        placeholder: 'Start writing your document...',
+        placeholder: "Start writing your document...",
       }),
       CharacterCount,
     ],
@@ -64,8 +62,9 @@ export function DocumentEditor({
   const translatedEditor = useEditor({
     extensions: [
       StarterKit,
+      Underline,
       Placeholder.configure({
-        placeholder: 'Translation will appear here...',
+        placeholder: "Translation will appear here...",
       }),
       CharacterCount,
     ],
@@ -86,75 +85,160 @@ export function DocumentEditor({
         content: sourceEditor.getHTML(),
         translatedContent: translatedEditor?.getHTML() || undefined,
       });
-      
+
       onSave?.(sourceEditor.getHTML(), translatedEditor?.getHTML());
     } catch (error) {
-      console.error('Failed to save document:', error);
+      console.error("Failed to save document:", error);
     } finally {
       setIsSaving(false);
     }
-  }, [sourceEditor, translatedEditor, documentId, createVersion, onSave, isSaving]);
+  }, [
+    sourceEditor,
+    translatedEditor,
+    documentId,
+    createVersion,
+    onSave,
+    isSaving,
+  ]);
 
   const handleTranslate = useCallback(async () => {
-    // Placeholder for AI translation
     if (!sourceEditor || !translatedEditor) return;
-    
+
+    setIsTranslating(true);
     const sourceContent = sourceEditor.getText();
-    // In a real implementation, this would call an AI service
-    const mockTranslation = `[TRANSLATED] ${sourceContent}`;
-    
-    translatedEditor.commands.setContent(mockTranslation);
+
+    // Simulate AI translation with better mock
+    setTimeout(() => {
+      const sentences = sourceContent.split(/[.!?]+/).filter((s) => s.trim());
+      const translatedSentences = sentences.map((sentence) => {
+        // Simple mock translation - in real app this would call OpenAI/Google Translate
+        return sentence.trim() ? `[Translated: ${sentence.trim()}]` : sentence;
+      });
+
+      const mockTranslation =
+        translatedSentences.join(". ").replace(/\.\s*$/, "") + ".";
+      translatedEditor.commands.setContent(`<p>${mockTranslation}</p>`);
+      setIsTranslating(false);
+    }, 1500);
   }, [sourceEditor, translatedEditor]);
 
+  const copyTranslation = useCallback(() => {
+    if (!translatedEditor) return;
+    const text = translatedEditor.getText();
+    navigator.clipboard.writeText(text);
+  }, [translatedEditor]);
+
+  // Power user keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
-        e.preventDefault();
-        handleSave();
+      if (e.metaKey || e.ctrlKey) {
+        switch (e.key) {
+          case "s":
+            e.preventDefault();
+            handleSave();
+            break;
+          case "t":
+            e.preventDefault();
+            handleTranslate();
+            break;
+          case "c":
+            if (e.shiftKey) {
+              e.preventDefault();
+              copyTranslation();
+            }
+            break;
+        }
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [handleSave]);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [handleSave, handleTranslate, copyTranslation]);
 
   if (!sourceEditor) {
     return <div>Loading editor...</div>;
   }
 
-  const activeEditor = activeTab === 'source' ? sourceEditor : translatedEditor;
+  const renderToolbar = (editor: NonNullable<typeof sourceEditor>) => (
+    <div className="flex items-center space-x-1">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => editor.chain().focus().undo().run()}
+        disabled={!editor.can().undo()}
+      >
+        <Undo className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => editor.chain().focus().redo().run()}
+        disabled={!editor.can().redo()}
+      >
+        <Redo className="h-4 w-4" />
+      </Button>
+
+      <Separator orientation="vertical" className="h-6" />
+
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => editor.chain().focus().toggleBold().run()}
+        data-active={editor.isActive("bold")}
+        className="data-[active=true]:bg-accent"
+      >
+        <Bold className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => editor.chain().focus().toggleItalic().run()}
+        data-active={editor.isActive("italic")}
+        className="data-[active=true]:bg-accent"
+      >
+        <Italic className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => editor.chain().focus().toggleUnderline().run()}
+        data-active={editor.isActive("underline")}
+        className="data-[active=true]:bg-accent"
+      >
+        <UnderlineIcon className="h-4 w-4" />
+      </Button>
+    </div>
+  );
 
   return (
     <div className="h-full flex flex-col bg-background">
-      {/* Toolbar */}
+      {/* Main Toolbar */}
       <div className="border-b border-border p-4">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-2">
-            <Button
-              variant={activeTab === 'source' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setActiveTab('source')}
-            >
-              Source
-            </Button>
-            <Button
-              variant={activeTab === 'translated' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setActiveTab('translated')}
-            >
-              Translation
-            </Button>
+          <div className="flex items-center space-x-4">
+            <h2 className="text-lg font-serif font-medium text-foreground">
+              Document Editor
+            </h2>
           </div>
-          
+
           <div className="flex items-center space-x-2">
+            <Button
+              onClick={copyTranslation}
+              variant="outline"
+              size="sm"
+              disabled={readonly || !translatedEditor?.getText()}
+            >
+              <Copy className="h-4 w-4 mr-2" />
+              Copy Translation
+            </Button>
             <Button
               onClick={handleTranslate}
               variant="outline"
               size="sm"
-              disabled={readonly}
+              disabled={readonly || isTranslating || !sourceEditor?.getText()}
             >
               <Languages className="h-4 w-4 mr-2" />
-              Translate
+              {isTranslating ? "Translating..." : "Translate"}
             </Button>
             <Button
               onClick={handleSave}
@@ -162,154 +246,77 @@ export function DocumentEditor({
               size="sm"
             >
               <Save className="h-4 w-4 mr-2" />
-              {isSaving ? 'Saving...' : 'Save'}
+              {isSaving ? "Saving..." : "Save"}
             </Button>
           </div>
         </div>
-
-        {/* Editor toolbar */}
-        {activeEditor && !readonly && (
-          <div className="flex items-center space-x-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => activeEditor.chain().focus().undo().run()}
-              disabled={!activeEditor.can().undo()}
-            >
-              <Undo className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => activeEditor.chain().focus().redo().run()}
-              disabled={!activeEditor.can().redo()}
-            >
-              <Redo className="h-4 w-4" />
-            </Button>
-            
-            <Separator orientation="vertical" className="h-6" />
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => activeEditor.chain().focus().toggleHeading({ level: 1 }).run()}
-              data-active={activeEditor.isActive('heading', { level: 1 })}
-              className="data-[active=true]:bg-accent"
-            >
-              <Heading1 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => activeEditor.chain().focus().toggleHeading({ level: 2 }).run()}
-              data-active={activeEditor.isActive('heading', { level: 2 })}
-              className="data-[active=true]:bg-accent"
-            >
-              <Heading2 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => activeEditor.chain().focus().toggleHeading({ level: 3 }).run()}
-              data-active={activeEditor.isActive('heading', { level: 3 })}
-              className="data-[active=true]:bg-accent"
-            >
-              <Heading3 className="h-4 w-4" />
-            </Button>
-            
-            <Separator orientation="vertical" className="h-6" />
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => activeEditor.chain().focus().toggleBold().run()}
-              data-active={activeEditor.isActive('bold')}
-              className="data-[active=true]:bg-accent"
-            >
-              <Bold className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => activeEditor.chain().focus().toggleItalic().run()}
-              data-active={activeEditor.isActive('italic')}
-              className="data-[active=true]:bg-accent"
-            >
-              <Italic className="h-4 w-4" />
-            </Button>
-            
-            <Separator orientation="vertical" className="h-6" />
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => activeEditor.chain().focus().toggleBulletList().run()}
-              data-active={activeEditor.isActive('bulletList')}
-              className="data-[active=true]:bg-accent"
-            >
-              <List className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => activeEditor.chain().focus().toggleOrderedList().run()}
-              data-active={activeEditor.isActive('orderedList')}
-              className="data-[active=true]:bg-accent"
-            >
-              <ListOrdered className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => activeEditor.chain().focus().toggleBlockquote().run()}
-              data-active={activeEditor.isActive('blockquote')}
-              className="data-[active=true]:bg-accent"
-            >
-              <Quote className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => activeEditor.chain().focus().toggleCode().run()}
-              data-active={activeEditor.isActive('code')}
-              className="data-[active=true]:bg-accent"
-            >
-              <Code className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
       </div>
 
       {/* Editor Content */}
       <div className="flex-1 relative">
-        {activeTab === 'source' && (
-          <div className="h-full">
-            <EditorContent 
-              editor={sourceEditor} 
-              className="h-full prose prose-lg max-w-none p-6 focus:outline-none [&_.ProseMirror]:h-full [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-full"
-            />
+        <div className="h-full flex">
+          {/* Source Editor */}
+          <div className="flex-1 flex flex-col border-r border-border">
+            <div className="border-b border-border p-3 bg-muted/30">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-serif font-medium text-foreground">
+                  Source
+                </h3>
+                <div className="text-xs text-muted-foreground">
+                  {sourceEditor?.storage.characterCount?.words() || 0} words
+                </div>
+              </div>
+              {!readonly && renderToolbar(sourceEditor)}
+            </div>
+            <div className="flex-1">
+              <EditorContent
+                editor={sourceEditor}
+                className="h-full prose prose-sm max-w-none p-4 focus:outline-none [&_.ProseMirror]:h-full [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-full"
+              />
+            </div>
           </div>
-        )}
-        
-        {activeTab === 'translated' && (
-          <div className="h-full">
-            <EditorContent 
-              editor={translatedEditor} 
-              className="h-full prose prose-lg max-w-none p-6 focus:outline-none [&_.ProseMirror]:h-full [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-full"
-            />
+
+          {/* Translated Editor */}
+          <div className="flex-1 flex flex-col">
+            <div className="border-b border-border p-3 bg-muted/30">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-serif font-medium text-foreground">
+                  Translation
+                </h3>
+                <div className="text-xs text-muted-foreground">
+                  {translatedEditor?.storage.characterCount?.words() || 0} words
+                </div>
+              </div>
+              {!readonly && translatedEditor && renderToolbar(translatedEditor)}
+            </div>
+            <div className="flex-1">
+              <EditorContent
+                editor={translatedEditor}
+                className="h-full prose prose-sm max-w-none p-4 focus:outline-none [&_.ProseMirror]:h-full [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-full"
+              />
+            </div>
           </div>
-        )}
+        </div>
       </div>
 
       {/* Status Bar */}
-      <div className="border-t border-border px-6 py-2 text-sm text-muted-foreground flex justify-between">
-        <span>
-          {activeEditor?.storage.characterCount?.characters() || 0} characters, {' '}
-          {activeEditor?.storage.characterCount?.words() || 0} words
-        </span>
-        <span>
-          {readonly ? 'Read-only' : 'Press Cmd+S to save'}
-        </span>
+      <div className="border-t border-border px-6 py-2 text-xs text-muted-foreground flex justify-between">
+        <div className="flex items-center space-x-4">
+          <span>
+            Source: {sourceEditor?.storage.characterCount?.characters() || 0}{" "}
+            chars, {sourceEditor?.storage.characterCount?.words() || 0} words
+          </span>
+          <span>
+            Translation:{" "}
+            {translatedEditor?.storage.characterCount?.characters() || 0} chars,{" "}
+            {translatedEditor?.storage.characterCount?.words() || 0} words
+          </span>
+        </div>
+        <div className="flex items-center space-x-4">
+          <span>⌘+S Save</span>
+          <span>⌘+T Translate</span>
+          <span>⌘+Shift+C Copy Translation</span>
+        </div>
       </div>
     </div>
   );

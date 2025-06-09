@@ -9,7 +9,6 @@ import { Separator } from '@/components/ui/separator';
 import { 
   Bold, 
   Italic, 
-  Underline, 
   List, 
   ListOrdered, 
   Quote, 
@@ -25,6 +24,7 @@ import {
 import { useState, useCallback, useEffect } from 'react';
 import { useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
+import { Id } from '@/convex/_generated/dataModel';
 
 interface DocumentEditorProps {
   documentId: string;
@@ -41,13 +41,10 @@ export function DocumentEditor({
   onSave,
   readonly = false 
 }: DocumentEditorProps) {
-  const [content, setContent] = useState(initialContent);
-  const [translatedContent, setTranslatedContent] = useState(initialTranslatedContent);
   const [activeTab, setActiveTab] = useState<'source' | 'translated'>('source');
   const [isSaving, setIsSaving] = useState(false);
   
   const createVersion = useMutation(api.documentVersions.create);
-  const updateTranslation = useMutation(api.documentVersions.updateTranslation);
 
   const sourceEditor = useEditor({
     extensions: [
@@ -59,8 +56,8 @@ export function DocumentEditor({
     ],
     content: initialContent,
     editable: !readonly,
-    onUpdate: ({ editor }) => {
-      setContent(editor.getHTML());
+    onUpdate: () => {
+      // Content updated
     },
   });
 
@@ -74,8 +71,8 @@ export function DocumentEditor({
     ],
     content: initialTranslatedContent,
     editable: !readonly,
-    onUpdate: ({ editor }) => {
-      setTranslatedContent(editor.getHTML());
+    onUpdate: () => {
+      // Translated content updated
     },
   });
 
@@ -85,7 +82,7 @@ export function DocumentEditor({
     setIsSaving(true);
     try {
       await createVersion({
-        documentId: documentId as any,
+        documentId: documentId as Id<"documents">,
         content: sourceEditor.getHTML(),
         translatedContent: translatedEditor?.getHTML() || undefined,
       });
@@ -107,7 +104,6 @@ export function DocumentEditor({
     const mockTranslation = `[TRANSLATED] ${sourceContent}`;
     
     translatedEditor.commands.setContent(mockTranslation);
-    setTranslatedContent(mockTranslation);
   }, [sourceEditor, translatedEditor]);
 
   useEffect(() => {

@@ -10,10 +10,10 @@ export default function SignIn() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   return (
-    <div className="flex flex-col gap-8 w-96 mx-auto h-screen justify-center items-center">
+    <div className="flex flex-col gap-8 w-full max-w-sm mx-auto h-screen justify-center items-center">
       <p>Log in to see the numbers</p>
       <form
-        className="flex flex-col gap-2"
+        className="flex flex-col space-y-4"
         onSubmit={(e) => {
           e.preventDefault();
           const formData = new FormData(e.target as HTMLFormElement);
@@ -28,13 +28,13 @@ export default function SignIn() {
         }}
       >
         <input
-          className="bg-background text-foreground rounded-md p-2 border-2 border-slate-200 dark:border-slate-800"
+          className="bg-background text-foreground rounded-md p-2 border-2 border-border"
           type="email"
           name="email"
           placeholder="Email"
         />
         <input
-          className="bg-background text-foreground rounded-md p-2 border-2 border-slate-200 dark:border-slate-800"
+          className="bg-background text-foreground rounded-md p-2 border-2 border-border"
           type="password"
           name="password"
           placeholder="Password"
@@ -45,7 +45,7 @@ export default function SignIn() {
         >
           {flow === "signIn" ? "Sign in" : "Sign up"}
         </button>
-        <div className="flex flex-row gap-2">
+        <div className="flex flex-row space-x-2">
           <span>
             {flow === "signIn"
               ? "Don't have an account?"
@@ -59,7 +59,7 @@ export default function SignIn() {
           </span>
         </div>
         {error && (
-          <div className="bg-red-500/20 border-2 border-red-500/50 rounded-md p-2">
+          <div className="bg-destructive/10 border-2 border-destructive/50 rounded-md p-2">
             <p className="text-foreground font-mono text-xs">
               Error signing in: {error}
             </p>

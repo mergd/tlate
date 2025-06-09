@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { 
   FolderOpen, 
@@ -74,7 +75,7 @@ interface ProjectItemProps {
 }
 
 function ProjectItem({ project, isExpanded, onToggle, onNavigate }: ProjectItemProps) {
-  const documents = useQuery(api.documents.listByProject, { projectId: project._id as any });
+  const documents = useQuery(api.documents.listByProject, { projectId: project._id as Id<"projects"> });
 
   return (
     <div className="group">

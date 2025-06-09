@@ -11,7 +11,12 @@ interface ChatInterfaceProps {
 
 export function ChatInterface({ onClose }: ChatInterfaceProps) {
   const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState([
+  const [messages, setMessages] = useState<Array<{
+    id: string;
+    role: "user" | "assistant";
+    content: string;
+    timestamp: number;
+  }>>([
     {
       id: "1",
       role: "assistant" as const,

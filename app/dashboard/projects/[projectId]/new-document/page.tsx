@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { use, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,18 +12,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ArrowLeft, FileText } from "lucide-react";
 
 interface NewDocumentPageProps {
-  params: {
+  params: Promise<{
     projectId: string;
-  };
+  }>;
 }
 
 export default function NewDocumentPage({ params }: NewDocumentPageProps) {
+  const resolvedParams = use(params);
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   
   const project = useQuery(api.projects.get, { 
-    id: params.projectId as any 
+    id: resolvedParams.projectId as Id<"projects"> 
   });
   const createDocument = useMutation(api.documents.create);
 
@@ -34,11 +36,11 @@ export default function NewDocumentPage({ params }: NewDocumentPageProps) {
     try {
       const documentId = await createDocument({
         title: title.trim(),
-        projectId: params.projectId as any,
+        projectId: resolvedParams.projectId as Id<"projects">,
         content: "# " + title.trim() + "\n\nStart writing your document here...",
       });
       
-      router.push(`/dashboard/projects/${params.projectId}/documents/${documentId}`);
+      router.push(`/dashboard/projects/${resolvedParams.projectId}/documents/${documentId}`);
     } catch (error) {
       console.error("Failed to create document:", error);
     } finally {
@@ -50,8 +52,8 @@ export default function NewDocumentPage({ params }: NewDocumentPageProps) {
     return (
       <div className="h-full flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading project...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading project...</p>
         </div>
       </div>
     );
@@ -61,8 +63,8 @@ export default function NewDocumentPage({ params }: NewDocumentPageProps) {
     return (
       <div className="h-full flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Project not found</h2>
-          <p className="text-gray-600 mb-4">The project you're looking for doesn't exist.</p>
+          <h2 className="text-xl font-semibold text-foreground mb-2">Project not found</h2>
+          <p className="text-muted-foreground mb-4">The project you&apos;re looking for doesn&apos;t exist.</p>
           <Button onClick={() => router.push("/dashboard")}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Dashboard
@@ -80,14 +82,14 @@ export default function NewDocumentPage({ params }: NewDocumentPageProps) {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => router.push(`/dashboard/projects/${params.projectId}`)}
+            onClick={() => router.push(`/dashboard/projects/${resolvedParams.projectId}`)}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Project
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">New Document</h1>
-            <p className="text-gray-600">Create a new document in {project.name}</p>
+            <h1 className="text-2xl font-bold text-foreground">New Document</h1>
+            <p className="text-muted-foreground">Create a new document in {project.name}</p>
           </div>
         </div>
 
@@ -118,9 +120,9 @@ export default function NewDocumentPage({ params }: NewDocumentPageProps) {
               
               <div className="space-y-2">
                 <Label>Project</Label>
-                <div className="p-3 bg-gray-50 rounded-md">
-                  <p className="font-medium text-gray-900">{project.name}</p>
-                  <p className="text-sm text-gray-500">
+                <div className="p-3 bg-muted rounded-md">
+                  <p className="font-medium text-foreground">{project.name}</p>
+                  <p className="text-sm text-muted-foreground">
                     {project.sourceLanguage} → {project.targetLanguage}
                   </p>
                 </div>
@@ -130,7 +132,7 @@ export default function NewDocumentPage({ params }: NewDocumentPageProps) {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => router.push(`/dashboard/projects/${params.projectId}`)}
+                  onClick={() => router.push(`/dashboard/projects/${resolvedParams.projectId}`)}
                 >
                   Cancel
                 </Button>

@@ -1,7 +1,9 @@
 "use client";
 
+import { use } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
@@ -15,26 +17,27 @@ import {
 import { useRouter } from "next/navigation";
 
 interface ProjectPageProps {
-  params: {
+  params: Promise<{
     projectId: string;
-  };
+  }>;
 }
 
 export default function ProjectPage({ params }: ProjectPageProps) {
+  const resolvedParams = use(params);
   const router = useRouter();
   const project = useQuery(api.projects.get, { 
-    id: params.projectId as any 
+    id: resolvedParams.projectId as Id<"projects"> 
   });
   const documents = useQuery(api.documents.listByProject, { 
-    projectId: params.projectId as any 
+    projectId: resolvedParams.projectId as Id<"projects"> 
   });
 
   if (project === undefined || documents === undefined) {
     return (
       <div className="h-full flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading project...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading project...</p>
         </div>
       </div>
     );
@@ -44,8 +47,8 @@ export default function ProjectPage({ params }: ProjectPageProps) {
     return (
       <div className="h-full flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Project not found</h2>
-          <p className="text-gray-600 mb-4">The project you're looking for doesn't exist.</p>
+          <h2 className="text-xl font-semibold text-foreground mb-2">Project not found</h2>
+          <p className="text-muted-foreground mb-4">The project you&apos;re looking for doesn&apos;t exist.</p>
           <Button onClick={() => router.push("/dashboard")}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Dashboard
@@ -57,7 +60,7 @@ export default function ProjectPage({ params }: ProjectPageProps) {
 
   return (
     <div className="h-full overflow-auto">
-      <div className="max-w-6xl mx-auto p-6 space-y-6">
+      <div className="container mx-auto p-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
@@ -70,27 +73,27 @@ export default function ProjectPage({ params }: ProjectPageProps) {
               Dashboard
             </Button>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">{project.name}</h1>
-              <p className="text-gray-600 flex items-center mt-1">
+              <h1 className="text-3xl font-bold text-foreground">{project.name}</h1>
+              <p className="text-muted-foreground flex items-center mt-1">
                 <Languages className="h-4 w-4 mr-2" />
                 {project.sourceLanguage} → {project.targetLanguage}
               </p>
               {project.description && (
-                <p className="text-gray-600 mt-2">{project.description}</p>
+                <p className="text-muted-foreground mt-2">{project.description}</p>
               )}
             </div>
           </div>
           
           <div className="flex items-center space-x-2">
             <Button
-              onClick={() => router.push(`/dashboard/projects/${params.projectId}/new-document`)}
+              onClick={() => router.push(`/dashboard/projects/${resolvedParams.projectId}/new-document`)}
             >
               <Plus className="h-4 w-4 mr-2" />
               New Document
             </Button>
             <Button
               variant="outline"
-              onClick={() => router.push(`/dashboard/projects/${params.projectId}/settings`)}
+              onClick={() => router.push(`/dashboard/projects/${resolvedParams.projectId}/settings`)}
             >
               <Settings className="h-4 w-4 mr-2" />
               Settings
@@ -164,22 +167,22 @@ export default function ProjectPage({ params }: ProjectPageProps) {
                 {documents.map((document) => (
                   <div
                     key={document._id}
-                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
-                    onClick={() => router.push(`/dashboard/projects/${params.projectId}/documents/${document._id}`)}
+                    className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent cursor-pointer transition-colors"
+                    onClick={() => router.push(`/dashboard/projects/${resolvedParams.projectId}/documents/${document._id}`)}
                   >
                     <div className="flex items-center space-x-3">
-                      <div className="p-2 bg-blue-100 rounded-lg">
-                        <FileText className="h-4 w-4 text-blue-600" />
+                      <div className="p-2 bg-primary/10 rounded-lg">
+                        <FileText className="h-4 w-4 text-primary" />
                       </div>
                       <div>
-                        <h3 className="font-medium text-gray-900">{document.title}</h3>
-                        <p className="text-sm text-gray-500">
+                        <h3 className="font-medium text-foreground">{document.title}</h3>
+                        <p className="text-sm text-muted-foreground">
                           Updated {new Date(document.updatedAt).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm text-muted-foreground">
                         {document.currentVersionId ? 'Has content' : 'Empty'}
                       </span>
                     </div>
@@ -188,15 +191,15 @@ export default function ProjectPage({ params }: ProjectPageProps) {
               </div>
             ) : (
               <div className="text-center py-8">
-                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-foreground mb-2">
                   No documents yet
                 </h3>
-                <p className="text-gray-500 mb-4">
+                <p className="text-muted-foreground mb-4">
                   Create your first document to start translating
                 </p>
                 <Button
-                  onClick={() => router.push(`/dashboard/projects/${params.projectId}/new-document`)}
+                  onClick={() => router.push(`/dashboard/projects/${resolvedParams.projectId}/new-document`)}
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Create Document

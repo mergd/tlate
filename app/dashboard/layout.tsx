@@ -1,6 +1,5 @@
 "use client";
 
-import { useAuthActions } from "@convex-dev/auth/react";
 import { Authenticated, Unauthenticated } from "convex/react";
 import { Button } from "@/components/ui/button";
 import { Sidebar } from "@/components/dashboard/Sidebar";
@@ -13,7 +12,6 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { signOut } = useAuthActions();
   const [isChatOpen, setIsChatOpen] = useState(false);
 
   return (

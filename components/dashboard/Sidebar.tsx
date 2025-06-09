@@ -1,26 +1,27 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
   FolderPlus, 
-  FileText, 
   Search, 
   MessageSquare, 
-  Settings,
-  Plus
+  Settings
 } from "lucide-react";
 import { CreateProjectDialog } from "./CreateProjectDialog";
 import { ProjectList } from "./ProjectList";
+import { ThemeSelector } from "@/components/theme/ThemeSelector";
+import { useRouter } from "next/navigation";
 
 interface SidebarProps {
   onToggleChat: () => void;
 }
 
 export function Sidebar({ onToggleChat }: SidebarProps) {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false);
   
@@ -78,10 +79,15 @@ export function Sidebar({ onToggleChat }: SidebarProps) {
       </div>
 
       {/* Footer */}
-      <div className="p-4 border-t border-border">
+      <div className="p-4 border-t border-border space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-muted-foreground">Theme</span>
+          <ThemeSelector />
+        </div>
         <Button
           variant="ghost"
           className="w-full justify-start"
+          onClick={() => router.push("/settings")}
         >
           <Settings className="h-4 w-4 mr-2" />
           Settings

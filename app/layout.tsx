@@ -1,21 +1,27 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { type Metadata } from "next";
+import { Geist, Source_Serif_4 } from "next/font/google";
 import "./globals.css";
 import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
 import ConvexClientProvider from "@/components/ConvexClientProvider";
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+import { ThemeProvider } from "@/components/theme/ThemeProvider";
+
+const geist = Geist({
   subsets: ["latin"],
+  variable: "--font-geist-sans",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const sourceSerif = Source_Serif_4({
   subsets: ["latin"],
+  variable: "--font-source-serif",
 });
 
 export const metadata: Metadata = {
-  title: "TLate - Professional Document Translation",
-  description: "AI-powered document translation with version control and collaborative features",
+  title: {
+    template: "%s | TLate",
+    default: "TLate",
+  },
+  description:
+    "AI-powered document translation with version control and collaborative features",
   icons: {
     icon: "/convex.svg",
   },
@@ -30,9 +36,11 @@ export default function RootLayout({
     <ConvexAuthNextjsServerProvider>
       <html lang="en">
         <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+          className={`${geist.variable} ${sourceSerif.variable} antialiased isolate `}
         >
-          <ConvexClientProvider>{children}</ConvexClientProvider>
+          <ThemeProvider defaultTheme="system">
+            <ConvexClientProvider>{children}</ConvexClientProvider>
+          </ThemeProvider>
         </body>
       </html>
     </ConvexAuthNextjsServerProvider>

@@ -1,0 +1,16 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+The proper command for doing type checking is pnpm run lint
+Don't include useless/obvious comments when editing files.
+
+
+Use kebab case for file names as well for consistency.
+
+
+This is a shadcn UI, and this repo uses pnpm, NextJS 15.3.3, convex for auth and backend, React 19, Tailwind for styling.
+
+
+Casting an object to any and then using the value should not be done just to fix a lint error in 99% in cases.  
